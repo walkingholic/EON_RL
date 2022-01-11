@@ -1,0 +1,2 @@
+Date,num_of_senario,num_of_req,num_of_warmup,num_kpath,ar,dif,avg_holding,range_band_s,range_band_e,num_of_slots
+2021-08-31 15:34:45.114377,6,60000,10000,3,4,2,50,1,10,320

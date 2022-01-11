@@ -1,0 +1,12 @@
+Date: 2021-06-19 11:26:03.615094
+num_of_senario: 6
+num_of_req: 100000
+num_of_warmup: 10000
+num_kpath: 3
+ar: 6
+dif: 1
+avg_holding: 50
+erlang: [300, 350, 400, 450, 500, 550]
+range_band_s: 1
+range_band_e: 10
+num_of_slots: 320

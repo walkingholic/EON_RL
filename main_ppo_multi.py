@@ -30,7 +30,7 @@ statesize = 54
 hiddensize = 128
 alpha = 0.01
 
-learning_rate = 0.00001
+learning_rate = 0.00005
 gamma = 0.90
 lmbda = 0.95
 
@@ -73,7 +73,7 @@ print("=========================================================================
 
 
 
-basepath = 'result\\'
+basepath = 'result'
 
 def createFolder(directory):
     try:

@@ -2951,7 +2951,7 @@ class Simulation(mp.Process):
         # print(SpBlock.argmin(axis=0)[4])
         idxmax = SpBlock.argmin(axis=0)[4]
         # print(candi_SB[idxmax])
-
+# s
 
         req.req_print()
         sss, eee, elength, reqnumofslots, fpath = candi_SB[idxmax]

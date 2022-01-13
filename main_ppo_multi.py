@@ -30,15 +30,15 @@ statesize = 54
 hiddensize = 128
 alpha = 0.01
 
-learning_rate = 0.00005
+learning_rate = 0.00001
 gamma = 0.90
 lmbda = 0.95
 
 eps_clip = 0.1
-K_epoch = 32
+K_epoch = 16
 num_EP = 5000
-timestep_max = 1000 #ep 샘플수
-update_interval = 1000 # 샘플 수집
+timestep_max = 10000 #ep 샘플수
+update_interval = 10000 # 샘플 수집
 TotalNumofSlots = 100
 num_of_req = 60000
 num_of_warmup = 10000
@@ -355,7 +355,7 @@ def ppoTrainSingle_ppangyo():
 
             model.train_net()
 
-        if e%100==1:
+        if e%10==1:
             training_time = datetime.datetime.now() - now_start
 
             plt.title('Training avg Reward plot: {}'.format(training_time))
@@ -408,7 +408,7 @@ def ppoTrainSingle_ppangyo():
             # model.save(file_path)
             torch.save(model.lnet.state_dict(), file_path)
 
-        if e%100 == 0:
+        if e%10 == 0:
 
 
             result_data = {}

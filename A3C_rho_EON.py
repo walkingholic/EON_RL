@@ -16,7 +16,7 @@ import pandas as pd
 ################################## set device ##################################
 
 env_version=2
-n_pro = 16
+n_pro = 1
 
 num_kpath = 5
 num_Subblock = 1
@@ -486,6 +486,10 @@ def train(global_model, rank, res_queue, timestep_max, dirpath):
 
             s_final = torch.tensor(next_state, dtype=torch.float)
             req_final = torch.tensor(next_req_info, dtype=torch.float)
+
+            # print(s_final.shape)
+            # print(req_final.shape)
+
             R = r if done else local_model.v(s_final, req_final).item()
             td_target_lst = []
             for reward in r_lst[::-1]:
@@ -575,12 +579,14 @@ if __name__ == '__main__':
 
 
     res_queue = mp.Queue()
-
+    # mp.set_start_method('spawn')
+    mp.get_context('spawn')
     processes = []
     for rank in range(n_pro):  # + 1 for test process
         # if rank == 0:
         #     p = mp.Process(target=test, args=(global_model,))
         # else:
+
         p = mp.Process(target=train, args=(global_model, rank, res_queue, timestep_max, dirpath))
         p.start()
         processes.append(p)

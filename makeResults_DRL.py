@@ -14,7 +14,7 @@ def smooth(y, box_pts):
     return y_smooth
 
 
-rollingvalue = 200
+rollingvalue = 100
 
 now_start=0
 num_of_senario=0

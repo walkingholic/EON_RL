@@ -17,132 +17,185 @@ import torch
 
 
 
-# # actionlist = [random.randint(0,49) for i in range(10)]
-# # actionlist = [ np.random.randint(0, 1) for i in range(100)]
-# actionlist = [ random.randint(1, 4) for i in range(100)]
-# # actionlist = np.random.randint(0, 1, 50)
-# print(actionlist)
-# x = np.arange(len(actionlist))
-# # plt.hist(actionlist, bins=49, cumulative=True,density=True,  label='CDF', histtype='step')
-# # plt.hist(actionlist, bins=49, density=True,  label='CDF', histtype='step')
-# # plt.show()
-# # actionlist = np.array(actionlist)
+kcandi = []
+
+for k in range(3):
+    candi = []
+    candi.append((1,1,1,1,1))
+    candi.append((2,2,2,2,2))
+    candi.append((3,3,3,3,3))
+
+    kcandi.append(candi)
+
+print(np.array(kcandi))
+print(np.array(kcandi).reshape(-1,5))
+
+
+
+
+
+
+# # sb = np.array()
 #
-# print(np.bincount(actionlist))
-# bincnt = np.bincount(actionlist)
+# sb = np.empty((0,5))
+# a = (4,2,3,4,25)
+# b = (1,1,2,6,35)
+# c = (2,3,5,4,25)
+# # sb = np.vstack((a,b))
+# # sb = np.vstack((sb,c))
 #
-# for i, b in enumerate(bincnt):
-#     if i%10==9:
-#         print()
-#     else:
-#         print('{0:03}'.format(b), end=' ')
 #
-# print('test, this is a test!')
+# for i in range(10):
+#     sb = np.vstack((sb, (np.random.randint(0, 10,5))))
+#
+# # sb = np.concatenate((a, b), axis = None)
+#
+#
+# print(sb)
+# print(sb[:2])
 
 
 
 
-baseslot = [[random.randint(0,2), 0] for i in range(50)]
-print(len(baseslot))
-
-baseslot = np.array(baseslot)
-nofrslot = 2
-
-print(baseslot[:,0])
 
 
-
-contig_block = []
-slot_count = 0
-s = 0
-
-for i in range(len(baseslot)):
-    if baseslot[i][0] == 0:
-        if slot_count == 0:
-            s = i
-        slot_count += 1
-        if i == 50 - 1:
-            # if slot_count >= nofrslot:
-            contig_block.append((s, s + slot_count - 1, slot_count, {99}))  # start, end, count,
-    elif baseslot[i][0] > 0:
-        if slot_count != 0:
-            # if slot_count >= nofrslot:
-            contig_block.append((s, s + slot_count - 1, slot_count, {99}))
-            slot_count = 0
+# print(sb.argmax(axis=0)[4])
+# idxmax = sb.argmax(axis=0)[4]
+# print(sb.argmax(axis=1))
+# print(sb.argmax())
+#
+# print(sb[idxmax])
 
 
+
+
+
+# # # actionlist = [random.randint(0,49) for i in range(10)]
+# # # actionlist = [ np.random.randint(0, 1) for i in range(100)]
+# # actionlist = [ random.randint(1, 4) for i in range(100)]
+# # # actionlist = np.random.randint(0, 1, 50)
+# # print(actionlist)
+# # x = np.arange(len(actionlist))
+# # # plt.hist(actionlist, bins=49, cumulative=True,density=True,  label='CDF', histtype='step')
+# # # plt.hist(actionlist, bins=49, density=True,  label='CDF', histtype='step')
+# # # plt.show()
+# # # actionlist = np.array(actionlist)
+# #
+# # print(np.bincount(actionlist))
+# # bincnt = np.bincount(actionlist)
+# #
+# # for i, b in enumerate(bincnt):
+# #     if i%10==9:
+# #         print()
+# #     else:
+# #         print('{0:03}'.format(b), end=' ')
+# #
+# # print('test, this is a test!')
+#
+#
+#
+#
+# baseslot = [[random.randint(0,2), 0] for i in range(50)]
+# print(len(baseslot))
+#
+# baseslot = np.array(baseslot)
+# nofrslot = 2
+#
+# print(baseslot[:,0])
+#
+#
+#
 # contig_block = []
-
-# contig_block = [(1,1,0,1), (1,1,1,1), (1,1,0,1), (1,1,0,1), (1,1,0,1), (1,1,0,1)]
-contig_block = np.array(contig_block)
-print(contig_block)
-# print(len(contig_block))
-# print(contig_block.sum(axis=0))
+# slot_count = 0
+# s = 0
 #
-# c = contig_block.sum(axis=0)[2]
-
-
-# maxlen = contig_block.max(axis=0)[2]
-# minlen = contig_block.min(axis=0)[2]
-# avgc = contig_block.mean(axis=0)[2]
-#
-# print(maxlen)
-# print(minlen)
-# print(avgc)
-
-
-
-candi_SB = []
-available_SB=[]
-s = 0
-
 # for i in range(len(baseslot)):
-#     c=0
+#     if baseslot[i][0] == 0:
+#         if slot_count == 0:
+#             s = i
+#         slot_count += 1
+#         if i == 50 - 1:
+#             # if slot_count >= nofrslot:
+#             contig_block.append((s, s + slot_count - 1, slot_count, {99}))  # start, end, count,
+#     elif baseslot[i][0] > 0:
+#         if slot_count != 0:
+#             # if slot_count >= nofrslot:
+#             contig_block.append((s, s + slot_count - 1, slot_count, {99}))
+#             slot_count = 0
 #
-#     while c < nofrslot and i+c<50:
-#         if baseslot[i+c][0] == 0:
-#             c += 1
-#             # print('i+c : ',i+c)
-#         else:
-#             break
 #
-#     if c >= nofrslot:
-#         # print(i, c)
-#         candi_SB.append((i, i+c-1, c))
+# # contig_block = []
 #
-#     if len(candi_SB) >= 2:
-#         break
+# # contig_block = [(1,1,0,1), (1,1,1,1), (1,1,0,1), (1,1,0,1), (1,1,0,1), (1,1,0,1)]
+# contig_block = np.array(contig_block)
+# print(contig_block)
+# # print(len(contig_block))
+# # print(contig_block.sum(axis=0))
+# #
+# # c = contig_block.sum(axis=0)[2]
 #
-for sb in contig_block:
-    sidx, eidx, slen, pp = sb
-    if slen < nofrslot:
-        continue
-    if slen == nofrslot:
-        available_SB.append((sidx, eidx, slen))
-    else:
-        available_SB.append((sidx, sidx+nofrslot-1, nofrslot))
-        available_SB.append((eidx-nofrslot+1, eidx, nofrslot))
-
-# print(candi_SB)
-
-print('nofrslot', nofrslot)
-
-testlist = []
-print(available_SB)
-testlist.append(copy.copy(available_SB[:2]))
-
-for sb in available_SB[:2]:
-    print(sb)
-
-
-print(testlist)
-lsb = 1
-j = 4
-
-for k in range(j-lsb):
-    print('kk', k)
-
-
+#
+# # maxlen = contig_block.max(axis=0)[2]
+# # minlen = contig_block.min(axis=0)[2]
+# # avgc = contig_block.mean(axis=0)[2]
+# #
+# # print(maxlen)
+# # print(minlen)
+# # print(avgc)
+#
+#
+#
+# candi_SB = []
+# available_SB=[]
+# s = 0
+#
+# # for i in range(len(baseslot)):
+# #     c=0
+# #
+# #     while c < nofrslot and i+c<50:
+# #         if baseslot[i+c][0] == 0:
+# #             c += 1
+# #             # print('i+c : ',i+c)
+# #         else:
+# #             break
+# #
+# #     if c >= nofrslot:
+# #         # print(i, c)
+# #         candi_SB.append((i, i+c-1, c))
+# #
+# #     if len(candi_SB) >= 2:
+# #         break
+# #
+# for sb in contig_block:
+#     sidx, eidx, slen, pp = sb
+#     if slen < nofrslot:
+#         continue
+#     if slen == nofrslot:
+#         available_SB.append((sidx, eidx, slen))
+#     else:
+#         available_SB.append((sidx, sidx+nofrslot-1, nofrslot))
+#         available_SB.append((eidx-nofrslot+1, eidx, nofrslot))
+#
+# # print(candi_SB)
+#
+# print('nofrslot', nofrslot)
+#
+# testlist = []
+# print(available_SB)
+# testlist.append(copy.copy(available_SB[:2]))
+#
+# for sb in available_SB[:2]:
+#     print(sb)
+#
+#
+# print(testlist)
+# lsb = 1
+# j = 4
+#
+# for k in range(j-lsb):
+#     print('kk', k)
+#
+#
 
 # source = np.eye(30)[1]
 # dest = np.eye(30)[2]

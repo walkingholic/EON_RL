@@ -1,2 +1,0 @@
-Date,n_pro,num_EP,num_kpath,num_Subblock,hiddensize,timestep_max,update_interval,learning_rate,gamma,alpha,num_of_warmup,ar,dif,avg_holding,range_band_s,range_band_e,num_of_slots
-2021-12-22 11:49:36.004687,8,10000,5,2,128,1000,100,0.0001,0.8,0.01,0,10,1,20,1,10,100

@@ -622,11 +622,6 @@ class Simulation(mp.Process):
             req.hop = path['hop']
             flag = 1
 
-            # ssbaseslot = np.array(baseslot)
-            # print(path)
-            # req.req_print()
-            # print(flag, ssbaseslot[:, 0])
-
         else:
             print('Error: specslot_assign_specific')
             print('Current path: ', path)
@@ -640,22 +635,57 @@ class Simulation(mp.Process):
             req.state = 0
             flag = 0
 
-        # del(subblock)
-        # print('Flag :=> ',flag)
-        # if flag and idx == 99:
-        #     ssbaseslot = np.array(baseslot)
-        #     print(path)
-        #     req.req_print()
-        #     print(flag, ssbaseslot[:, 0])
-        #     print(idx, cnt)
-        #     print('Flag :=> ', flag)
-
-
         return flag
 
+    def env_BC(self):
 
+        statelist, reqinfolist, actionlist = np.empty((0, 94)), np.empty((0, 30)), np.empty((0, 5))
+        all_k_path = self.precal_path()
+        # self.make_traffic_mtx(all_k_path)
 
+        # for req in self.req_in_gen:
+        #     self.sim_main_operation(req, idx_req, all_k_path, 0)
+        #     idx_req += 1
+        # print('Warm Up..')
+        # for i in range(10000):
+        #     req = self.gene_request(i, 0)
+        #     self.req_in_gen.append(req)
 
+        print('Behavior Storing..')
+
+        succ_cnt_req=0
+        blk_cnt_req=0
+        idx_req = 0
+        while succ_cnt_req != 1000:
+            # print(succ_cnt_req)
+            idx_req+=1
+            req = self.gene_request(idx_req, 0)
+            self.req_in_gen.append(req)
+            self.cur_time = req.arrival_time
+            self.release(self.cur_time)
+            k_path = self.KSP_routing(req, all_k_path)
+            state, req_info, kth_candi_SB = self.base_slot_presentation_v2_5_reference_modified(k_path, req)
+
+            flag = 0
+            flag, act, path = self.spec_assin_2D_forBC(kth_candi_SB, req)
+            print(flag)
+            if flag == 1:
+                succ_cnt_req += 1
+                self.updata_link_state(path, req)
+                self.req_in_service.append(req)
+                statelist = np.vstack((statelist, state))
+                reqinfolist = np.vstack((reqinfolist, req_info))
+                action = np.eye(5)[act]
+                actionlist = np.vstack((actionlist, action))
+                # print(actionlist)
+            else:
+                blk_cnt_req += 1
+
+        print('BBP: ', blk_cnt_req/1000, blk_cnt_req)
+
+            # print(succ_cnt_req)
+
+        return statelist, reqinfolist, actionlist
 
 
 
@@ -663,15 +693,11 @@ class Simulation(mp.Process):
         # all_k_path = self.precal_path()
         self.all_k_path = self.precal_path()
         # self.make_traffic_mtx(self.all_k_path)
-
         self.req_in_service = []
         # self.req_in_gen = []
         self.req_in_success = []
         self.req_in_blocked = []
-
-
         state, req_info, req, candi_sb = self.env_reset()
-
         # print(state.shape)
         # action_contain=[]
         # for i in range(2):
@@ -682,19 +708,14 @@ class Simulation(mp.Process):
             state, req_info, req, reward, done, candi_sb = self.env_step(req, np.random.randint(0, self.num_of_action), candi_sb)#0~4
             # print(state.shape)
 
-
     def env_step(self, req, action, kth_cand_sb):
 
         # k_path = self.KSP_routing(req, self.all_k_path)
         # print('env_step:', action_contain)
-
         # req.req_print()
-
         npath = int(action/self.num_of_subblock)
         sb_number = action%self.num_of_subblock
-
         # print(len(kth_cand_sb))
-
         # for sb in kth_cand_sb:
         #     print(sb)
         candi_sb = kth_cand_sb[npath]
@@ -703,7 +724,6 @@ class Simulation(mp.Process):
         _, _, count_slots, numofslots, path= candi_sb[sb_number] #count_slots: 서브블록의 크기, numofslots: 루트에서 모듈레이션 포멧에 따른 슬롯수,
         # flag = self.spec_assin_FF(path, req)
         # path = k_path[npath]
-
         # print('path', path)
         # print('sbpath', sbpath)
 
@@ -711,7 +731,6 @@ class Simulation(mp.Process):
             flag = self.specslot_assign_specific(path, req, candi_sb[sb_number])
         else:
             flag = 0
-
         if flag:
             # req.req_print()
             # baseslot = np.array(self.base_slot(path))
@@ -731,8 +750,6 @@ class Simulation(mp.Process):
             # else:
             #     cost = ((hop - baseslot[ssi - 1][0])) / hop
 
-
-
             # for i in range(len(path['path']) - 1):
             #     fromnode = path['path'][i]
             #     tonode = path['path'][i + 1]
@@ -742,8 +759,6 @@ class Simulation(mp.Process):
             #         #                slot[z] = 1
             #         #                print('z: ',z, '  ', slot_2D[z])
             #         print('B: ', slot_2D[z][0], slot_2D[z][1])
-
-
 
             # for i in range(len(path['path']) - 1):
             #     fromnode = path['path'][i]
@@ -756,12 +771,9 @@ class Simulation(mp.Process):
             #         print('A: ', slot_2D[z][0], slot_2D[z][1])
             # baseslot = np.array(self.base_slot(path))
             # print(baseslot[:, 0])
-
-
             self.req_in_service.append(req)
             # reward = cost*default_reward
             reward = 1
-
 
             self.cnt_suc_band[int(req.bandwidth / self.SlotWidth) - 1] += 1
             self.cnt_suc_nos[req.nos - 1] += 1
@@ -771,7 +783,6 @@ class Simulation(mp.Process):
             # print('Succ')
             # req.req_print()
             # print('in service req: ', len(self.req_in_service))
-
         else:
             # state, req_info = self.base_slot_presentation(k_path, req)
             # state = state.squeeze()
@@ -781,13 +792,10 @@ class Simulation(mp.Process):
             #     print((sbb))
             #
             # baseslot = self.base_slot(path)
-
-
             self.total_Block_bandwidth += req.bandwidth
             self.cnt_blk_band[int(req.bandwidth / self.SlotWidth) - 1] += 1
             self.NOB += 1
             self.req_in_blocked.append(req)
-
             reward = -1
 
 
@@ -798,6 +806,11 @@ class Simulation(mp.Process):
         self.cur_time = req.arrival_time
         self.release(self.cur_time)
         k_path = self.KSP_routing(req, self.all_k_path)
+
+
+
+
+
 
         if self.env_version == 2:
             state, req_info, kth_cand_sb = self.base_slot_presentation_v2_reference(k_path, req)
@@ -883,31 +896,25 @@ class Simulation(mp.Process):
                 blk_req = self.NOB - self.lastNOB
                 succ_req = self.modeShow-blk_req
 
-                self.que.put((2*succ_req- self.modeShow, succ_req, blk_req, 0))
-
-
+                self.que.put((2*succ_req-self.modeShow, succ_req, blk_req, 0))
 
         print(len(self.req_in_blocked))
         print('BBP: ', self.NOB/self.N_Req)
-        print(self.erlang , 'finish sim')
+        print(self.erlang, 'finish sim')
 
         self.utilization = self.totalusedslot / (self.NumOfEdge * self.TotalNumofSlots * self.N_Req)
         self.avghop = self.avghop / (self.N_Req - self.NOB)
 
         if self.dic != None:
-            self.dic[self.erlang]= [self.NOB, self.cnt_gen_band, self.cnt_blk_band, self.cnt_suc_band, self.total_Gen_bandwidth, self.total_Block_bandwidth, self.cnt_suc_nos, self.utilization, self.avghop, self.RT_name, self.SA_name, self.networktopo]
-
+            self.dic[self.erlang] = [self.NOB, self.cnt_gen_band, self.cnt_blk_band, self.cnt_suc_band, self.total_Gen_bandwidth, self.total_Block_bandwidth, self.cnt_suc_nos, self.utilization, self.avghop, self.RT_name, self.SA_name, self.networktopo]
         # return self.NOB, self.cnt_gen_band, self.cnt_blk_band, self.cnt_suc_band, self.total_Gen_bandwidth, self.total_Block_bandwidth, self.cnt_suc_nos, self.utilization, self.avghop, self.RT_name, self.SA_name, self.networktopo
-
 
     def sim_main(self):
 
         all_k_path = self.precal_path()
-
         # for i in range(self.N_Req):
         #     req = self.gene_request(i, 0)
         #     self.req_in_gen.append(req)
-
         self.make_traffic_mtx(all_k_path)
 
         idx_req = 0
@@ -922,8 +929,6 @@ class Simulation(mp.Process):
         self.avghop = self.avghop / (self.N_Req - self.NOB)
 
         return self.NOB, self.cnt_gen_band, self.cnt_blk_band, self.cnt_suc_band, self.total_Gen_bandwidth, self.total_Block_bandwidth, self.cnt_suc_nos, self.utilization, self.avghop, self.RT_name, self.SA_name, self.networktopo
-
-
 
     def sim_main_operation(self, req, idx_req, all_k_path, warmup):
 
@@ -946,11 +951,7 @@ class Simulation(mp.Process):
         else:
             k_path = None
 
-        # print(req.id)
-        # print(k_path)
-
         if warmup != 1:
-            # self.req_in_gen.append(req)
             self.total_Gen_bandwidth += req.bandwidth
             self.cnt_gen_band[int(req.bandwidth / self.SlotWidth) - 1] += 1
 
@@ -958,24 +959,15 @@ class Simulation(mp.Process):
                 for j in self.G._data[i]:
                     self.totalusedslot += sum(int(u) for u, v in self.slot_info_2D[i][j])
         flag = 0
-        #        print("=========================================================================================")
         if idx_req % self.modeShow == 0 and warmup != 1:
             print(self.RT_name,'-', self.SA_name,': ', self.erlang ,': ' ,idx_req, 'th - req gen - ', self.cur_time, 'len(Q)', len(self.req_in_service), ' NOB:', self.NOB, ' BPP:', self.NOB/(idx_req+1), 'part BPP:', (self.NOB-self.lastNOB)/(self.modeShow))
             self.lastNOB = self.NOB
 
-        # if idx_req>4000:
-        #     self.base_slot_presentation(k_path, req)
-
         for path in k_path:
-            #            print('B', id(path))
-            #            path = self.routing(req, path)
-            #            print('A', id(path))
-
             if self.SA_name=='FF':
                 flag=self.spec_assin_FF(path, req)
             elif self.SA_name == 'BF':
                 flag = self.spec_assin_BF(path, req)  # best fit
-
             elif self.SA_name == '2D':
                 flag = self.spec_assin_2D(path, req)
             elif self.SA_name == 'FLEF':
@@ -986,10 +978,6 @@ class Simulation(mp.Process):
                 flag = self.spec_assin_Slot(path, req)
             elif self.SA_name == 'FZ2D':
                 flag = self.spec_assin_FZ2D(path, req)
-
-
-
-
 
             if flag:
                 self.updata_link_state(path, req)
@@ -1004,19 +992,10 @@ class Simulation(mp.Process):
                 break
 
         if flag != 1 and warmup != 1:
-            #            req.req_print()
-            # print('Blocked', req.id)
             self.total_Block_bandwidth += req.bandwidth
             self.cnt_blk_band[int(req.bandwidth / self.SlotWidth) - 1] += 1
             self.NOB += 1
             self.req_in_blocked.append(req)
-
-
-
-
-
-
-
 
     def KSP_routing(self, req, all_k_path):
         # temp_path = copy.deepcopy(all_k_path[req.source][req.destination])
@@ -1296,15 +1275,15 @@ class Simulation(mp.Process):
         #                    print('items  ',items)
 
 
-        print('sum hop:', sum(hop_list))
-        print('avg hop:', sum(hop_list)/len(hop_list))
-        print('max hop:', max(hop_list))
-        print('min hop:', min(hop_list))
-
-        print('sum dist:', sum(dist_list))
-        print('avg dist:', sum(dist_list)/len(dist_list))
-        print('max dist:', max(dist_list))
-        print('min dist:', min(dist_list))
+        # print('sum hop:', sum(hop_list))
+        # print('avg hop:', sum(hop_list)/len(hop_list))
+        # print('max hop:', max(hop_list))
+        # print('min hop:', min(hop_list))
+        #
+        # print('sum dist:', sum(dist_list))
+        # print('avg dist:', sum(dist_list)/len(dist_list))
+        # print('max dist:', max(dist_list))
+        # print('min dist:', min(dist_list))
 
         return pre_cal_path
 
@@ -2358,17 +2337,9 @@ class Simulation(mp.Process):
                 # print(slot_state)
             k_slot_state += slot_state
         simg = np.array(k_slot_state)
-        # slot = np.expand_dims(slot, axis=0)
-        # slot = np.expand_dims(slot, axis=0)
 
-        # print(slot)
-        # simg = torch.tensor(slot, dtype=torch.float32)
-        # print(simg.shape)
         slotimg = np.expand_dims(simg, axis=0)
         slotimg = np.expand_dims(slotimg, axis=0)
-
-        # print(slotimg.shape)
-        # print(state.shape)
 
         return slotimg, state, send_kth_candi_SB
 
@@ -2411,14 +2382,11 @@ class Simulation(mp.Process):
                         break
 
                 lenSB = len(candi_SB)
-                # print(k, candi_SB)
 
                 for addEmptSB_i in range(j-lenSB):
                     candi_SB.append((-1, -1, 0, 0, path))
 
-
                 send_kth_candi_SB.append(copy.copy(candi_SB))
-
                 avail_num_FS = 0  #가능한 블록들의 총 FS 수
 
                 for i in range(j):
@@ -2438,20 +2406,12 @@ class Simulation(mp.Process):
                     state = np.concatenate([state, [-1], [-1]])
                 state = np.concatenate([state, [-1], [-1], [-1]])
 
-
-
-
-
         req_info = np.concatenate([source, dest, bh])
         req_info = np.expand_dims(req_info, axis=0)
 
         state = np.expand_dims(state, axis=0)
-        # print(state.shape)
-        # print(state)
+
         return state, req_info, send_kth_candi_SB
-
-
-
 
     def base_slot_presentation_v2_3_reference_modified(self, kpath, req): # 각 서브블록의 holding time을 state로 준다.
         # plt.figure(figsize=(5, 5), dpi=200, constrained_layout=True)
@@ -2749,7 +2709,6 @@ class Simulation(mp.Process):
 
     def base_slot_presentation_v2_5_reference_modified(self, kpath, req): # 각 패스에 베이스슬롯의 슬롯 점유상태를 표시 & 후보 서브블록 선택시, 가능한 후보블록에서 양쪽 사이트에 가능한 블록을 찾는다.
         # plt.figure(figsize=(5, 5), dpi=200, constrained_layout=True)
-
         source = np.eye(self.NumOfNode)[req.source-1]
         dest = np.eye(self.NumOfNode)[req.destination-1]
         holdingtime = req.holding_time
@@ -2767,7 +2726,6 @@ class Simulation(mp.Process):
                 pathhop = path['hop']
                 numofslots = self.modul_format(path, req) # 루트에서 요구 슬롯사이즈
                 baseslot = np.array(self.base_slot(path))
-
                 contig_block = []
                 slot_count = 0
                 s = 0
@@ -2786,7 +2744,6 @@ class Simulation(mp.Process):
                             contig_block.append([s, s + slot_count - 1, slot_count])
                             slot_count = 0
 
-
                 candi_SB = []
                 for sb in contig_block:
                     sidx, eidx, slen = sb
@@ -2798,18 +2755,15 @@ class Simulation(mp.Process):
                         candi_SB.append((sidx, sidx + numofslots - 1, slen, numofslots, path))
                         candi_SB.append((eidx - numofslots + 1, eidx, slen, numofslots, path))
 
-
                 lenSB = len(candi_SB)
                 for addEmptSB_i in range(j-lenSB):
                     candi_SB.append((-1, -1, 0, 0, path))
 
-                send_kth_candi_SB.append(copy.copy(candi_SB))
-
+                send_kth_candi_SB.append(copy.copy(candi_SB[:j]))
                 avail_num_FS = 0  #가능한 블록들의 총 FS 수
 
                 for i in range(j):
                     idxs, idxe, c, _, _ = candi_SB[i]
-                    # avail_num_FS += c
 
                     lt = 0 # 블럭 왼쪽 타임 벨류
                     rt = 0 # 블럭 오른쪽 타임 벨류
@@ -2856,11 +2810,6 @@ class Simulation(mp.Process):
                     else:
                         state = np.concatenate([state, [-1], [-1], [-1], [-1], [-1], [-1]])
 
-                    # print(ls, rs, lt, rt)
-
-
-
-
                 contig_block = np.array(contig_block)
                 len_cont_block = len(contig_block)
                 if len_cont_block:
@@ -2874,8 +2823,6 @@ class Simulation(mp.Process):
                     avg_avail_num_FS=0
                     maxlen=0
                     minlen=0
-
-
                 state = np.concatenate([state, [pathhop/10], [numofslots/10], [len_cont_block/10], [num_empty_slots/10], [avg_avail_num_FS/10], [maxlen/10], [minlen/10]])   # 66+3 = 69
                 # state = np.concatenate([state, [pathhop], [numofslots], [len_cont_block], [num_empty_slots], [avg_avail_num_FS], [maxlen], [minlen]])   # 66+3 = 69
 
@@ -2896,6 +2843,128 @@ class Simulation(mp.Process):
         # print(state.shape)
         # print(state)
         return state, req_info, send_kth_candi_SB
+
+    def base_slot_presentation_BehaviorClone(self, kpath, req): # 각 패스에 베이스슬롯의 슬롯 점유상태를 표시 & 후보 서브블록 선택시, 가능한 후보블록에서 양쪽 사이트에 가능한 블록을 찾는다.
+        # plt.figure(figsize=(5, 5), dpi=200, constrained_layout=True)
+        # maxvalue = req.holding_time
+        source = np.eye(self.NumOfNode)[req.source - 1]
+        dest = np.eye(self.NumOfNode)[req.destination - 1]
+        holdingtime = req.holding_time
+        bh = [req.holding_time, req.bandwidth]
+
+        state = np.concatenate([source, dest, [holdingtime / 50]])  # 62
+        # print(state)
+        send_kth_candi_SB = []
+
+        # maxvalue = self.holding_time
+        maxvalue = req.holding_time
+        k_slot_state = []
+        for k in range(self.K):
+            # slot_state = [[maxvalue for i in range(self.TotalNumofSlots)] for r in range(10)]
+            slot_state = [maxvalue for i in range(self.TotalNumofSlots)]
+            if len(kpath) > k:
+                path = kpath[k]
+                for i in range(len(path['path']) - 1):
+                    fromnode = path['path'][i]
+                    tonode = path['path'][i + 1]
+                    slot_2D = self.slot_info_2D[fromnode][tonode]
+                    for n in range(self.TotalNumofSlots):
+                        if slot_2D[n][1] > 0:
+                            if slot_2D[n][1] - self.cur_time > maxvalue:
+                                slot_state[n] = maxvalue
+                            else:
+                                slot_state[n] = slot_2D[n][1] - self.cur_time
+                        else:
+                            slot_state[n] = 0
+
+
+            state = np.concatenate([state, slot_state])
+
+
+        # req.req_print()
+        # print(state)
+        # print(state.shape)
+        state = np.expand_dims(state, axis=0)
+        # print(state.shape)
+
+        req_info = np.concatenate([source, dest, bh])
+        req_info = np.expand_dims(req_info, axis=0)
+
+        return state, req_info, send_kth_candi_SB
+
+
+
+
+
+
+
+    def spec_assin_2D_forBC(self, candi_SB, req):  # best fit
+        # candi_SB consist of (sidx, eidx, empty block length, req num of slots, path)
+
+        flag = 0
+        idxmax = -1
+        candi_SB = np.array(candi_SB).reshape((-1,5))
+
+        # print('Candi Len', len(candi_SB))
+        # print(candi_SB)
+
+        SpBlock = []
+        for idxaction, sb in enumerate(candi_SB):
+            # print(sb)
+            sb_start, sb_end, blk_length, nofs, path = sb
+
+            numofslots = self.modul_format(path, req)
+            baseslot = self.base_slot(path)
+            hop = len(path['path']) - 1
+            endtime = req.end_time
+            holdtime = req.holding_time
+
+            if nofs >= numofslots:
+                cost_S = 0
+                cost_T = 0
+
+                if sb_start == 0:
+                    cost_S = (hop - baseslot[sb_start + numofslots][0]) / hop
+                    cost_T = abs(endtime - baseslot[sb_start + numofslots][1]) / holdtime
+                    if cost_T > 1:
+                        cost_T = 1
+                elif sb_start > 0 and sb_end < self.TotalNumofSlots-1:
+                    cost_S = ((hop - baseslot[sb_start - 1][0]) + (hop - baseslot[sb_start + numofslots][0])) / hop
+                    cost_T_l = abs(endtime - baseslot[sb_start - 1][1]) / holdtime
+                    cost_T_r = abs(endtime - baseslot[sb_start + numofslots][1]) / holdtime
+                    if cost_T_l > 1:
+                        cost_T_l = 1
+                    if cost_T_r > 1:
+                        cost_T_r = 1
+                    cost_T = cost_T_l + cost_T_r
+                elif sb_end == self.TotalNumofSlots-1:
+                    cost_S = (hop - baseslot[sb_start - 1][0]) / hop
+                    cost_T = abs(endtime - baseslot[sb_start - 1][1]) / holdtime
+                    if cost_T > 1:
+                        cost_T = 1
+                SpBlock.append((sb_start, sb_end, cost_S, cost_T, cost_S + cost_T))
+            else:
+                SpBlock.append((-1, -1, 100, 100, 100))
+
+        SpBlock = np.array(SpBlock)
+        # print(SpBlock)
+        # print(SpBlock.argmin(axis=0)[4])
+        idxmax = SpBlock.argmin(axis=0)[4]
+        # print(candi_SB[idxmax])
+
+
+        # req.req_print()
+        sss, eee, elength, reqnumofslots, fpath = candi_SB[idxmax]
+        # print(fpath)
+        flag = self.specslot_assign_specific(fpath, req, candi_SB[idxmax])
+        return flag, idxmax, fpath
+
+
+
+
+
+
+
 
 
     # state size 86,87

@@ -2953,7 +2953,7 @@ class Simulation(mp.Process):
         # print(candi_SB[idxmax])
 
 
-        # req.req_print()
+        req.req_print()
         sss, eee, elength, reqnumofslots, fpath = candi_SB[idxmax]
         # print(fpath)
         flag = self.specslot_assign_specific(fpath, req, candi_SB[idxmax])

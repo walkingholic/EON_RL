@@ -13,6 +13,9 @@ import torch
 import torch.nn as nn
 from torch.distributions import Categorical
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from torch.utils.data import TensorDataset # 텐서데이터셋
+
 
 
 n_pro = 1
@@ -20,7 +23,7 @@ env_version=2
 N_S = 100
 num_kpath = 5
 num_Subblock = 1
-N_A = num_kpath*num_Subblock
+actionsize = num_kpath * num_Subblock
 statesize = 94
 hiddensize = 128
 alpha = 0.01
@@ -144,10 +147,7 @@ class ActorCritic(nn.Module):    #  for  v2 && v2_1
         return v
 
 
-
-
-if __name__ == '__main__':
-
+def BehaviorClone():
     print("============================================================================================")
     # set device to cpu or cuda
     # device = torch.device('cpu')
@@ -170,31 +170,81 @@ if __name__ == '__main__':
     createFolder(dirpath)
     print(dirpath)
 
-    model = ActorCritic(N_S, N_A).to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=0.1)
+    model = ActorCritic(N_S, actionsize).to(device)
+    # criterion = nn.CrossEntropyLoss().to(device)
+    # criterion = nn.MSELoss().to(device)
+    criterion = nn.NLLLoss().to(device)
 
-    env = Simulation(num_of_req, num_kpath, N_A, num_of_warmup, ar, avg_holding, range_band_s,
+    # optimizer = optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = optim.SGD(model.parameters(), lr=0.01)
+
+    env = Simulation(num_of_req, num_kpath, actionsize, num_of_warmup, ar, avg_holding, range_band_s,
                      range_band_e, TotalNumofSlots,
                      rt_name, sa_name, dirpath, env_version)
     # env.env_init()
 
-    num_epoch = 10000
+    num_epoch = 6000
+    num_samples = 5000
+    batsize = 1000
+    testsamplesize = 500
+    statelist, reqinfolist, actOneHot, actlist = env.env_BC(num_samples, statesize, actionsize)
+    slist = torch.tensor(statelist[:-testsamplesize], dtype=torch.float).squeeze(1).to(device)
+    # aOnehotlist = torch.tensor(actOneHot[:-2000], dtype=torch.float).squeeze(1).to(device)
+    alist = torch.tensor(actlist[:-testsamplesize]).squeeze(1).to(device)
+
+    print(alist.shape)
+
+    dataset = TensorDataset(slist, alist)
+    dataloader = DataLoader(dataset, batch_size=batsize, shuffle=True)
+
     for epoch in range(num_epoch):
 
-        statelist, reqinfolist, actionlist = env.env_BC()
-        slist = torch.tensor(statelist, dtype=torch.float).squeeze(1).to(device)
-        alist = torch.tensor(actionlist, dtype=torch.float).squeeze(1).to(device)
+        for batch_idx, samples in enumerate(dataloader):
+            x_train, y_train = samples
 
-        optimizer.zero_grad()
+            pi = model.pi(x_train)
+            # print(pi.sum(dim=1))
+            # print(torch.log(pi))
+            # print(pi)
+            loss = criterion(torch.log(pi+1e-9) , y_train)
+
+            optimizer.zero_grad()
+            loss.mean().backward()
+            optimizer.step()
+
+        if epoch % 100 == 0:
+            print('Epoch {:4d}/{} Cost: {:.4f}'.format(epoch, num_epoch, loss.item()))
+
+    with torch.no_grad():  # torch.no_grad()를 하면 gradient 계산을 수행하지 않는다.
+        slist = torch.tensor(statelist[-testsamplesize:], dtype=torch.float).squeeze(1).to(device)
+        aOnehotlist = torch.tensor(actOneHot[-testsamplesize:], dtype=torch.float).squeeze(1).to(device)
+        alist = torch.tensor(actlist[-testsamplesize:]).squeeze(1).to(device)
+
+        # slist = torch.tensor(statelist[:-testsamplesize], dtype=torch.float).squeeze(1).to(device)
+        # aOnehotlist = torch.tensor(actOneHot[:-testsamplesize], dtype=torch.float).squeeze(1).to(device)
+        # alist = torch.tensor(actlist[:-testsamplesize]).squeeze(1).to(device)
+
         pi = model.pi(slist)
+        # print(torch.argmax(pi, 1))
+        # print(torch.argmax(aOnehotlist, 1))
+        # print(torch.argmax(pi, 1) == torch.argmax(aOnehotlist, 1))
+        print(torch.argmax(pi, 1) == alist)
+        # print(alist)
+        # correct_prediction = torch.argmax(pi, 1) == torch.argmax(aOnehotlist, 1)
+        correct_prediction = torch.argmax(pi, 1) == alist
+        accuracy = correct_prediction.float().mean()
+        print('Accuracy:', accuracy.item())
 
-        loss =  criterion(pi, alist)
-        loss.mean().backward()
-        optimizer.step()
+        # # MNIST 테스트 데이터에서 무작위로 하나를 뽑아서 예측을 해본다
+        # r = random.randint(0, len(mnist_test) - 1)
+        # X_single_data = mnist_test.test_data[r:r + 1].view(-1, 28 * 28).float().to(device)
+        # Y_single_data = mnist_test.test_labels[r:r + 1].to(device)
+        #
+        # print('Label: ', Y_single_data.item())
+        # single_prediction = linear(X_single_data)
+        # print('Prediction: ', torch.argmax(single_prediction, 1).item())
 
-        if epoch % 1 == 0:
-            print('Epoch {:4d}/{} Cost: {:.6f}'.format(epoch, num_epoch, loss.item()))
 
-
+if __name__ == '__main__':
+    BehaviorClone()
 

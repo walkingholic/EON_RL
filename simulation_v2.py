@@ -608,14 +608,14 @@ class Simulation(mp.Process):
         flag = 0
         baseslot = self.base_slot(path)
         idx_start, idx_end, count, numofslots, sb_path = subblock
-        cnt=0
-        while cnt<numofslots and idx_start+cnt < self.TotalNumofSlots:
-            if baseslot[idx_start + cnt][0] == 0:
-                cnt += 1
-            else:
-                break
+        # cnt=0
+        # while cnt<numofslots and idx_start+cnt < self.TotalNumofSlots:
+        #     if baseslot[idx_start + cnt][0] == 0:
+        #         cnt += 1
+        #     else:
+        #         break
 
-        if cnt == numofslots:
+        if numofslots != 0:
             req.slot_start = idx_start
             req.slot_end = idx_start + numofslots -1
             req.state = 1
@@ -623,42 +623,37 @@ class Simulation(mp.Process):
             flag = 1
 
         else:
-            print('Error: specslot_assign_specific')
-            print('Current path: ', path)
-            print('CNT==COUNT is not equal !', cnt, numofslots)
-            print('Sub block info: ',subblock)
-
-            for i in range(numofslots):
-                print(baseslot[idx_start + i][0], end=' ')
-            print()
+            # print('Error: specslot_assign_specific')
+            # print('Current path: ', path)
+            # print('CNT==COUNT is not equal !', numofslots)
+            # print('Sub block info: ',subblock)
+            #
+            # for i in range(numofslots):
+            #     print(baseslot[idx_start + i][0], end=' ')
+            # print()
 
             req.state = 0
             flag = 0
 
         return flag
 
-    def env_BC(self):
+    def env_BC(self, nsamples, statesize, actionsize):
 
-        statelist, reqinfolist, actionlist = np.empty((0, 94)), np.empty((0, 30)), np.empty((0, 5))
+        statelist, reqinfolist, actionOnehotlist = np.empty((0, statesize)), np.empty((0, 30)), np.empty((0, actionsize))
+        actlist = []
         all_k_path = self.precal_path()
-        # self.make_traffic_mtx(all_k_path)
 
-        # for req in self.req_in_gen:
-        #     self.sim_main_operation(req, idx_req, all_k_path, 0)
-        #     idx_req += 1
-        # print('Warm Up..')
-        # for i in range(10000):
-        #     req = self.gene_request(i, 0)
-        #     self.req_in_gen.append(req)
 
         print('Behavior Storing..')
 
         succ_cnt_req=0
         blk_cnt_req=0
         idx_req = 0
-        while succ_cnt_req != 1000:
+        while succ_cnt_req != nsamples:
             # print(succ_cnt_req)
             idx_req+=1
+            if idx_req%1000==0:
+                print(idx_req)
             req = self.gene_request(idx_req, 0)
             self.req_in_gen.append(req)
             self.cur_time = req.arrival_time
@@ -668,24 +663,27 @@ class Simulation(mp.Process):
 
             flag = 0
             flag, act, path = self.spec_assin_2D_forBC(kth_candi_SB, req)
-            print(flag)
+            # print(flag)
+            # print(path)
+            # req.req_print()
             if flag == 1:
                 succ_cnt_req += 1
                 self.updata_link_state(path, req)
                 self.req_in_service.append(req)
                 statelist = np.vstack((statelist, state))
                 reqinfolist = np.vstack((reqinfolist, req_info))
+                actlist.append([act])
                 action = np.eye(5)[act]
-                actionlist = np.vstack((actionlist, action))
+                actionOnehotlist = np.vstack((actionOnehotlist, action))
                 # print(actionlist)
             else:
                 blk_cnt_req += 1
 
-        print('BBP: ', blk_cnt_req/1000, blk_cnt_req)
+        print('BBP: ', blk_cnt_req/(succ_cnt_req+blk_cnt_req), blk_cnt_req)
 
-            # print(succ_cnt_req)
+        # print(succ_cnt_req)
 
-        return statelist, reqinfolist, actionlist
+        return statelist, reqinfolist, actionOnehotlist, actlist
 
 
 
@@ -2951,12 +2949,17 @@ class Simulation(mp.Process):
         # print(SpBlock.argmin(axis=0)[4])
         idxmax = SpBlock.argmin(axis=0)[4]
         # print(candi_SB[idxmax])
-# s
+        # s
 
-        req.req_print()
+        # req.req_print()
         sss, eee, elength, reqnumofslots, fpath = candi_SB[idxmax]
-        # print(fpath)
+        # print(SpBlock[idxmax])
+        # print('selected action sb',candi_SB[idxmax])
+
+
         flag = self.specslot_assign_specific(fpath, req, candi_SB[idxmax])
+        # print(flag)
+
         return flag, idxmax, fpath
 
 

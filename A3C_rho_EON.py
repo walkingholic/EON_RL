@@ -15,13 +15,13 @@ import pandas as pd
 
 ################################## set device ##################################
 
-env_version=2
+env_version=2.5
 n_pro = 1
 
 num_kpath = 5
-num_Subblock = 1
+num_Subblock = 5
 N_A = num_kpath*num_Subblock
-statesize = 54
+statesize = 214
 
 # num_kpath = 5
 # num_Subblock = 2
@@ -38,7 +38,7 @@ num_EP = 10000
 timestep_max = 1000
 update_interval = 100
 
-learning_rate = 0.00001
+learning_rate = 0.0001
 gamma = 0.9
 global alpha
 alpha = 0.01
@@ -160,16 +160,7 @@ class ActorCritic(nn.Module):    #  for  v2 && v2_1
     def __init__(self, state_dim, action_dim):
         super(ActorCritic, self).__init__()
 
-        # self.fc1 = nn.Linear(346, 512)
-        # self.fc1 = nn.Linear(96, 512)
-        # self.fc1 = nn.Linear(68, 512)
-        # self.fc1 = nn.Linear(262, 512)
-        # self.fc1 = nn.Linear(237, 128)
-        # self.fc1 = nn.Linear(147, 128)
-        # self.fc1 = nn.Linear(177, hiddensize)
         self.fc1 = nn.Linear(statesize, hiddensize)
-        # self.fc1 = nn.Linear(162, 512)
-        # self.fc1 = nn.Linear(562, 512)
         self.fc2 = nn.Linear(hiddensize, hiddensize)
         self.fc3 = nn.Linear(hiddensize, hiddensize)
         self.fc4 = nn.Linear(hiddensize, hiddensize)

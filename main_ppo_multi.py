@@ -402,7 +402,7 @@ def ppoTrainSingle_ppangyo():
             fig = plt.gcf()
             fig.savefig('{}/train entropy.png'.format(dirpath), facecolor='white', dpi=600)
             plt.clf()
-        if e % 1000 == 0:
+        if e % 100 == 0:
             file_name = "PPO_single_{:05d}_{}.pth".format(e, blk_req)
             file_path = os.path.join(pthpath, file_name)
             # model.save(file_path)
